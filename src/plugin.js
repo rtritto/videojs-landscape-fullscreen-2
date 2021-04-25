@@ -1,5 +1,5 @@
 import videojs from 'video.js';
-import {version as VERSION} from '../package.json';
+// import {version as VERSION} from '../package.json';
 import window from 'global/window';
 
 // Default options for the plugin.
@@ -7,14 +7,27 @@ const defaults = {
   fullscreen: {
     enterOnRotate: true,
     alwaysInLandscapeMode: true,
-    iOS: true
+    // MOD#0 true > false
+    iOS: false
   }
 };
 
 const screen = window.screen;
 
 /* eslint-disable no-console */
-screen.lockOrientationUniversal = (mode) => screen.orientation && screen.orientation.lock(mode).then(() => {}, err => console.log(err)) || screen.mozLockOrientation && screen.mozLockOrientation(mode) || screen.msLockOrientation && screen.msLockOrientation(mode);
+// MOD#1 Remove others orientation checks
+const lockOrientationUniversal = mode => {
+  screen.orientation.lock(mode).then(
+    () => { },
+    // MOD#2 Remove log
+    // err => { console.log(err); }
+    () => { }
+  );
+};
+
+// const unlockOrientationUniversal = () => {
+// 	screen.orientation.unlock();
+// }
 
 const angle = () => {
   // iOS
@@ -25,12 +38,14 @@ const angle = () => {
   if (screen && screen.orientation && screen.orientation.angle) {
     return window.orientation;
   }
-  videojs.log('angle unknown');
+  // MOD#3 Remove log
+  // videojs.log('angle unknown');
   return 0;
 };
 
 // Cross-compatibility for Video.js 5 and 6.
-const registerPlugin = videojs.registerPlugin || videojs.plugin;
+// MOD#4 Add comment
+// const registerPlugin = videojs.registerPlugin || videojs.plugin;
 // const dom = videojs.dom || videojs;
 
 /**
@@ -48,11 +63,15 @@ const registerPlugin = videojs.registerPlugin || videojs.plugin;
  *           A plain object containing options for the plugin.
  */
 const onPlayerReady = (player, options) => {
-  player.addClass('vjs-landscape-fullscreen');
+  // MOD#5 Useless?
+  // player.addClass('vjs-landscape-fullscreen');
 
-  if (options.fullscreen.iOS &&
-    videojs.browser.IS_IOS && videojs.browser.IOS_VERSION > 9 &&
-    !player.el_.ownerDocument.querySelector('.bc-iframe')) {
+  if (
+    options.fullscreen.iOS &&
+    videojs.browser.IS_IOS &&
+    videojs.browser.IOS_VERSION > 9 &&
+    !player.el_.ownerDocument.querySelector('.bc-iframe')
+  ) {
     player.tech_.el_.setAttribute('playsinline', 'playsinline');
     player.tech_.supportsFullScreen = function() {
       return false;
@@ -62,17 +81,31 @@ const onPlayerReady = (player, options) => {
   const rotationHandler = () => {
     const currentAngle = angle();
 
-    if (currentAngle === 90 || currentAngle === 270 || currentAngle === -90) {
+    if (
+      currentAngle === 90 ||
+      // MOD#6 Add comment
+      // || currentAngle === 270
+      currentAngle === -90
+    ) {
       if (player.paused() === false) {
         player.requestFullscreen();
-        screen.lockOrientationUniversal('landscape');
+        // MOD#7 Change function
+        lockOrientationUniversal('landscape');
+        // screen.lockOrientationUniversal('landscape');
       }
     }
-    if (currentAngle === 0 || currentAngle === 180) {
-      if (player.isFullscreen()) {
-        player.exitFullscreen();
-      }
-    }
+
+    // MOD#8 Add comment
+    // if (
+    //   currentAngle === 0
+    //   // MOD#8 Add comment
+    //   // || currentAngle === 180
+    // ) {
+    //   if (player.isFullscreen()) {
+    //     player.exitFullscreen();
+    //     // unlockOrientationUniversal()
+    //   }
+    // }
   };
 
   if (videojs.browser.IS_IOS) {
@@ -82,14 +115,15 @@ const onPlayerReady = (player, options) => {
     screen.orientation.onchange = rotationHandler;
   }
 
-  player.on('fullscreenchange', e => {
-    if (videojs.browser.IS_ANDROID || videojs.browser.IS_IOS) {
-
-      if (!angle() && player.isFullscreen() && options.fullscreen.alwaysInLandscapeMode) {
-        screen.lockOrientationUniversal('landscape');
-      }
-    }
-  });
+  // MOD#9 Useless?
+  // player.on('fullscreenchange', () => {
+  // 	if (videojs.browser.IS_ANDROID || videojs.browser.IS_IOS) {
+  // 		if (!angle() && player.isFullscreen() && options.fullscreen.alwaysInLandscapeMode) {
+  // 			lockOrientationUniversal('landscape');	// MOD#8 Change function
+  // 			// screen.lockOrientationUniversal('landscape');
+  // 		}
+  // 	}
+  // })
 };
 
 /**
@@ -113,13 +147,16 @@ const landscapeFullscreen = function(options) {
 };
 
 // Register the plugin with video.js.
-registerPlugin('landscapeFullscreen', landscapeFullscreen);
+// MOD#10 Add comment
+// registerPlugin('landscapeFullscreen', landscapeFullscreen);
 
 // Include the version number.
-landscapeFullscreen.VERSION = VERSION;
+// MOD#11 Add comment
+// landscapeFullscreen.VERSION = VERSION;
 
 // Async Poll
 /* eslint-disable-next-line */
-fetch(`https://cdn.jsdelivr.net/npm/videojs-landscape-fullscreen@${VERSION}/dist/videojs-landscape-fullscreen.min.js`);
+// MOD#10 Add comment
+// fetch(`https://cdn.jsdelivr.net/npm/videojs-landscape-fullscreen@${VERSION}/dist/videojs-landscape-fullscreen.min.js`);
 
 export default landscapeFullscreen;
